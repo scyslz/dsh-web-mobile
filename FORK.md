@@ -74,12 +74,23 @@ npm pack              # 可选：dsh-web-mobile-3.3.5-compat.3.tgz
 # tag（推荐，可复现）
 dsh plugin --profile web add git+https://github.com/scyslz/dsh-web-mobile.git#v3.3.5-compat.3
 
-# 或跟分支
-dsh plugin --profile web add git+https://github.com/scyslz/dsh-web-mobile.git#compat/dsh-0.2.2
+# 或跟 main（改完推上去，重装即生效）
+dsh plugin --profile web add github:scyslz/dsh-web-mobile#main
 
 # 或本地 tarball
 dsh plugin --profile web add file:/path/to/dsh-web-mobile-3.3.5-compat.3.tgz
 ```
+
+> **跟 main 不等于自动更新**：`pnpm-lock.yaml` 会把解析到的 commit hash 写死，
+> 所以每次更新完 main 都要重装一次（`remove` + `add` 最稳），否则还是旧提交：
+>
+> ```bash
+> dsh plugin --profile web remove dsh-web-mobile
+> dsh plugin --profile web add github:scyslz/dsh-web-mobile#main
+> systemctl kill -s TERM dsh.service
+> ```
+>
+> 想要可复现 / 好回滚，就把 specifier 换成 tag：`#v3.3.5-compat.3`。
 
 装完重启：
 
