@@ -71,11 +71,11 @@ npm pack              # 可选：dsh-web-mobile-3.3.5-compat.3.tgz
 ## 安装
 
 ```bash
-# tag（推荐，可复现）
-dsh plugin --profile web add git+https://github.com/scyslz/dsh-web-mobile.git#v3.3.5-compat.3
-
-# 或跟 main（改完推上去，重装即生效）
+# 跟 main（推荐：改完推上去，重装即生效）
 dsh plugin --profile web add github:scyslz/dsh-web-mobile#main
+
+# 固定版本（可复现、好回滚）
+dsh plugin --profile web add github:scyslz/dsh-web-mobile#v3.3.5-compat.3
 
 # 或本地 tarball
 dsh plugin --profile web add file:/path/to/dsh-web-mobile-3.3.5-compat.3.tgz

@@ -5,7 +5,15 @@
 > ②删除会话不再被反代 524。
 > 布局与交互完全沿用上游。改动说明与安装命令见 **[FORK.md](FORK.md)**。
 >
-> 安装：`dsh plugin --profile web add git+https://github.com/scyslz/dsh-web-mobile.git#v3.3.5-compat.3`
+> **安装（跟 main，推荐）**
+>
+> ```bash
+> dsh plugin --profile web add github:scyslz/dsh-web-mobile#main
+> systemctl kill -s TERM dsh.service
+> ```
+>
+> 想要可复现的固定版本，把 `#main` 换成 tag：`#v3.3.5-compat.3`
+> （`dsh plugin --profile web add github:scyslz/dsh-web-mobile#v3.3.5-compat.3`）
 
 <p align="center">
   <strong>DSH Web UI 移动端适配：窄屏好用，宽屏适用</strong>
