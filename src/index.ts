@@ -19,6 +19,7 @@
  * @deepseek-ai packages, so all host faces are declared structurally below.
  */
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { installHtmlCompat } from './compat.js'
 import { installResponseCompression } from './compress.js'
 import { deleteSession, type DeleteSessionDeps, type DeleteSessionResult } from './delete-session.js'
 
@@ -52,6 +53,27 @@ interface DeleteSessionBody {
 
 /** Maximum accepted request body size (1 MiB — the delete body is one id). */
 const MAX_BODY_BYTES = 1_048_576
+
+/** Hard ceiling for one delete request. The phone reaches this endpoint through
+ * a reverse proxy (Cloudflare / EdgeOne answer 524 when the origin stalls), so
+ * the handler must always answer before that: 12s covers the 6s idle wait plus
+ * the trash move, and a still-running session gets a real error instead of a
+ * gateway timeout. */
+const DELETE_DEADLINE_MS = 12_000
+
+/** Raised when one delete request outlives DELETE_DEADLINE_MS. */
+class DeleteDeadlineExceeded extends Error {}
+
+/** Resolve with `work`, or reject with DeleteDeadlineExceeded after `ms`. */
+function withDeadline<T>(work: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new DeleteDeadlineExceeded(`exceeded ${ms}ms`)), ms)
+    work.then(
+      (value) => { clearTimeout(timer); resolve(value) },
+      (error) => { clearTimeout(timer); reject(error) },
+    )
+  })
+}
 
 /** Sentinel: the request body grew past MAX_BODY_BYTES. */
 class PayloadTooLargeError extends Error {}
@@ -127,6 +149,14 @@ export function apply(ctx: HostContext): void {
   // services are read per request so host shapes without them degrade to a
   // structured 503 instead of a crash.
   ctx.inject(['webServer'], (webCtx) => {
+    // Local fork addition: prepend the JS compatibility shim to every HTML
+    // document so older WebViews (no Promise.withResolvers / AbortSignal.any)
+    // can boot the stock client instead of dying before first paint.
+    webCtx.effect(
+      () => installHtmlCompat(webCtx.webServer as unknown as Parameters<typeof installHtmlCompat>[0]),
+      'dsh-web-mobile: html compatibility shim',
+    )
+
     webCtx.effect(() => webCtx.webServer.register({
       kind: 'exact',
       path: '/api/mobile-nav.session.delete',
@@ -172,14 +202,26 @@ export function apply(ctx: HostContext): void {
         // owns the response, so it may never reject with the socket open (the
         // host's dispatcher would then answer a bare 400 with no body).
         let result: DeleteSessionResult
+        const startedAt = Date.now()
         try {
-          result = await deleteSession({
+          result = await withDeadline(deleteSession({
             persistence: persistence as DeleteSessionDeps['persistence'],
             sessions: ctx.get('sessions') as DeleteSessionDeps['sessions'] | undefined,
             agents: ctx.get('agents') as DeleteSessionDeps['agents'] | undefined,
             workspaceRegistry: ctx.get('workspaceRegistry') as DeleteSessionDeps['workspaceRegistry'] | undefined,
-          }, sessionId)
+          }, sessionId), DELETE_DEADLINE_MS)
+          ctx.logger.warn?.(`dsh-web-mobile: session-delete '${sessionId}' finished in ${Date.now() - startedAt}ms`)
         } catch (error) {
+          if (error instanceof DeleteDeadlineExceeded) {
+            ctx.logger.warn(`dsh-web-mobile: session-delete '${sessionId}' exceeded ${DELETE_DEADLINE_MS}ms`)
+            respond(res, 504, {
+              error: {
+                code: 'delete-timeout',
+                message: '删除超时：该会话可能仍在运行。请先停止运行，再重试删除。',
+              },
+            })
+            return
+          }
           ctx.logger.warn(`dsh-web-mobile: session-delete threw for '${sessionId}': ${String(error)}`)
           respond(res, 500, { error: { code: 'delete-failed', message: 'session delete failed unexpectedly' } })
           return

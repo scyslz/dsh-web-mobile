@@ -27,3 +27,6 @@ docs/debug/composer-tree-recon.md
 # audits = 带日期的审计快照，fork-wzxmt-zhc = 外部 fork 对账记录；两者都是过程产物
 docs/audits/
 docs/fork-wzxmt-zhc/
+
+# local build artifacts
+*.tgz

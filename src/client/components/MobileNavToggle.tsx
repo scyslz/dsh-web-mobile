@@ -1,5 +1,5 @@
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import { IconFolderOpen, IconPanelLeft } from '../core/icon-compat.ts'
+import { IconPanelLeft } from '../core/icon-compat.ts'
 import { NS } from '../i18n/locales.ts'
 import { openFilesPanel } from './open-files-panel.ts'
 
@@ -37,11 +37,15 @@ export function MobileNavToggle({ toggleSidebar, t }: MobileNavToggleProps) {
       <button
         type="button"
         data-mobile-nav="files"
-        aria-label={t('files')}
-        title={t('files')}
+        aria-label={t('sidebarRight')}
+        title={t('sidebarRight')}
         onClick={toggleExplorer}
       >
-        <IconFolderOpen size={16} />
+        {/* Host only ships IconPanelLeft; mirroring it gives the same glyph the
+            desktop header uses for the right sidebar. */}
+        <span style={{ display: 'inline-flex', transform: 'scaleX(-1)' }}>
+          <IconPanelLeft size={16} />
+        </span>
       </button>
     </>
   )

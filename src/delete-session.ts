@@ -49,8 +49,11 @@ import { rm, mkdir, readdir, rename, stat, writeFile } from 'node:fs/promises'
 import type { Dirent } from 'node:fs'
 import { join, relative, resolve, sep } from 'node:path'
 
-/** How long to wait for a live agent to converge to idle before refusing. */
-const IDLE_TIMEOUT_MS = 20_000
+/** How long to wait for a live agent to converge to idle before refusing.
+ * Kept short on purpose: this rides a reverse proxy (Cloudflare/EdgeOne answer
+ * 524 when the origin takes too long), so a running session must be refused
+ * with a real 409 instead of stalling the HTTP response. */
+const IDLE_TIMEOUT_MS = 6_000
 
 /** Trash entries older than this are purged (best effort) after a successful move. */
 const TRASH_TTL_MS = 24 * 60 * 60 * 1000

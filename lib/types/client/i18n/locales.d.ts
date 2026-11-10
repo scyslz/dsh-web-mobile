@@ -21,6 +21,7 @@ export declare const zh: {
     readonly downloads: "下载记录";
     readonly quickSettings: "设置";
     readonly files: "文件浏览";
+    readonly sidebarRight: "右侧栏";
     readonly fileUpload: "添加文件";
     readonly fileUploadImage: "上传图片";
     readonly fileUploadAttachment: "上传附件";

@@ -8,6 +8,7 @@ import { installFrameController, installPhoneChrome } from './effects/phone-chro
 import { installReconciler, registerReconcileTasks } from './effects/reconciler-adapter.ts'
 import { installSelectionChromeYield } from './effects/selection-chrome.ts'
 import { installOverlayInteractions } from './effects/drawer-close.ts'
+import { installRightSidebarState } from './effects/right-sidebar-state.ts'
 import { installSidebarSwipe } from './effects/sidebar-swipe.ts'
 import { installSubagentChipTouch } from './effects/subagent-chip-touch.ts'
 import { installSessionMenuDelete } from './effects/session-menu.ts'
@@ -219,6 +220,10 @@ export function apply(ctx: ClientContext): void {
   // on top — the panel or the drawer); a leftward stroke never collapses
   // anything.
   installSidebarSwipe(ctx, openFilesPanel)
+
+  // Publish the right sidebar's open state on <html> so the stylesheet can
+  // hand it the full screen (the host overlaps the panel's own tab strip).
+  installRightSidebarState(ctx)
 
   // Lineage-count chip: reliable open/close on touch pointers (upstream is
   // hover-timer driven and has no onClick on the count variant).

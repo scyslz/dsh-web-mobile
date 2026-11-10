@@ -644,4 +644,74 @@ export const MISC_CSS = `@media (max-width: 1023px) and (pointer: coarse) {
   }
 }
 
+/* 本地 fork 修正（2026-11-10）：上面的 -12px 是给「App 状态栏压住 WebView」的
+   场景量的（DSHA / 全屏 PWA）。在普通浏览器标签页里 viewport 本来就起点在状态栏
+   之下，再上提 12px 会把标题行、侧栏开关、Files 按钮顶到视口外（实测
+   header.y = -12、开关 y = -6，按钮被裁掉一半，看起来像「会话里没有按钮」）。
+   浏览器模式下不位移。 */
+@media (max-width: 1023px) and (pointer: coarse) and (display-mode: browser) {
+  [data-mobile-nav="frame"] [data-phase] header:has([class*="_headerLeading"]) {
+    margin-top: 0 !important;
+  }
+}
+
+/* 本地 fork（2026-11-10）：会话头部右上角补齐「底部抽屉 / 右侧抽屉」两个入口。
+   上游在手机档把 headerUtilities 整块 display:none，只留插件自己的文件按钮，
+   于是 PC 上右上角的「展开底部面板」在手机上没有对应入口，用户按 PC 肌肉记忆
+   找不到。这里只放出 bottom-toggle 那一颗（「更多操作」仍在手机档隐藏，
+   360/390px 一行塞不下第三颗），并给 headerActions 让出 34px，避免和
+   「Standard mode」胶囊重叠。 */
+@media (max-width: 1023px) and (pointer: coarse) {
+  [data-mobile-nav="frame"] [data-phase] header:has([class*="_headerLeading"]) [class*="_headerUtilities"] {
+    display: flex !important;
+    position: absolute !important;
+    right: 38px !important;
+    top: 5px !important;
+    margin: 0 !important;
+    height: 30px !important;
+    align-items: center !important;
+    overflow: visible !important;
+    z-index: 2 !important;
+  }
+  [data-mobile-nav="frame"] [data-phase] header:has([class*="_headerLeading"]) [class*="_headerUtilities"] [class*="moreButton"] {
+    display: none !important;
+  }
+  [data-mobile-nav="frame"] [data-phase] header:has([class*="_headerLeading"]) [data-dsh-bottom-toggle] {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+  }
+  [data-mobile-nav="frame"] [data-phase] header:has([class*="_headerLeading"]) [class*="_headerActions"] {
+    margin-right: 34px !important;
+  }
+}
+
+/* 本地 fork（2026-11-10，compat.5）：右上角第二颗用插件自己的按钮，不用宿主
+   headerCorner。原因：宿主在右侧栏打开时会把 data-sidebar-right-expand
+   换掉，并在**面板内部**渲染「Collapse right sidebar」——那颗按钮被页面头部
+   （z-index 更高）整个盖住，点不到，于是面板打开后再也收不回去。
+   插件自己的按钮在页面头部里，且 openFilesPanel() 本身就是 toggle 语义
+   （开时点 closer、关时点 opener），位置和图标改成和 PC 的右侧栏一致。 */
+@media (max-width: 1023px) and (pointer: coarse) {
+  [data-mobile-nav="frame"] [data-phase] header:has([class*="_headerLeading"]) [class*="_titleRow"] > [class*="_headerCorner"] {
+    display: none !important;
+  }
+}
+
+
+/* 本地 fork（2026-11-10，compat.8）：右侧栏打开时把整屏让给面板。
+   宿主把面板的 tab 条压在页面头部下面，打开后只看到内容区（上次停在终端就只看见
+   终端），面板自己的 tab 条和 Collapse 按钮都点不到。
+   状态来自 effects/right-sidebar-state.ts：它读宿主那颗 Collapse 按钮的
+   computed visibility（关着时 hidden、开着时 visible），写成
+   <html data-dsh-right-sidebar>。不用 :has([data-sidebar-right-expand]) —— 实测
+   有些关闭路径上 opener 不会立刻挂回来，那样头部会永久消失。
+   关闭时属性变回 closed，头部立刻回来。 */
+@media (max-width: 1023px) and (pointer: coarse) {
+  html[data-dsh-right-sidebar="open"] header:has([class*="_crumbs"]) {
+    display: none !important;
+  }
+}
+
 `
