@@ -87,24 +87,63 @@ dsh plugin --profile web add file:/path/to/dsh-web-mobile-3.3.5-compat.3.tgz
 systemctl kill -s TERM dsh.service     # systemd 会拉起
 ```
 
-## 升级上游（下次 DSH 再升级时）
+## 上游有新版本时：怎么更新 main 而不冲突
+
+核心原则：**不要 `git merge upstream/main`**。上游把 `lib/`（构建产物）也提交进仓库，
+merge 会把两套构建产物混在一起，冲突全在这里。正确做法是「搬补丁 + 重建 lib + 快进 main」。
 
 ```bash
-git fetch --tags
-git checkout v<新版 tag>
-git checkout -b compat/<新版>
-git cherry-pick <本分支的提交>          # 只有两个文件的改动，冲突面很小
-# 或手动搬两个文件：src/compat.ts、src/delete-session.ts 的常量与 src/index.ts 的 deadline
-pnpm install --frozen-lockfile && pnpm run verify && pnpm run build
+cd dsh-web-mobile
+git fetch upstream --tags
+
+# 1) 从新上游开临时分支
+git checkout -b tmp-update upstream/main
+
+# 2) 只搬我们的源码补丁（lib 一律不要）
+git checkout v3.3.5-compat.3 -- src/compat.ts
+git diff v3.3.5-compat.3^ v3.3.5-compat.3 -- src/index.ts src/delete-session.ts | git apply
+
+#    冲突只可能出现在这两处：
+#      src/index.ts          —— import + inject(['webServer']) 里的一段
+#      src/delete-session.ts —— IDLE_TIMEOUT_MS 常量
+#    按新版本上下文微调即可（通常只需改行号，逻辑不动）
+
+# 3) 重建：lib 冲突在这一步被彻底消灭
+pnpm install --frozen-lockfile
+pnpm run verify && pnpm run build
+
+# 4) 提交并让 main 直接快进过去（保持线性历史）
+git add -A
+git commit -m "compat: 跟到上游 v<新版本>"
+git checkout main
+git reset --hard tmp-update
+git branch -d tmp-update
+git push origin main
+
+# 5) 打 tag，装的时候用 tag 固定
+git tag v<新版本>-compat.1
+git push origin v<新版本>-compat.1
 ```
 
-判断是否还能直接用的两条：
+为什么这样几乎不会冲突：
 
-1. `grep -n "tapIndex" <dsh>/node_modules/@deepseek-ai/dsh-host-webserver/lib/index.js`
-   还在 → 兼容层可以直接用；
-2. `deleteSession()` 的 `IDLE_TIMEOUT_MS` 还在 `src/delete-session.ts` → deadline 补丁照搬。
+| 文件 | 冲突概率 | 原因 |
+|---|---|---|
+| `src/compat.ts` | 0 | 新文件，上游没有 |
+| `src/index.ts` | 低 | 只有 1 个 import + 1 个 effect 注入 |
+| `src/delete-session.ts` | 低 | 只有 1 个常量 |
+| `lib/**` | 0 | 不参与合并，直接重建 |
+| `README.md` | 中 | 顶部 fork 说明；冲突时保留我们的那几行即可 |
+
+另外两条经验：
+
+- **不要把 `prepare` 脚本当解法。** 试过「安装时构建、不提交 lib」，pnpm 会拦截 git 依赖的
+  build script（`allowBuilds` 的 key 带 commit hash，每次更新都变），实际上不可用。
+- **`package.json` 的 version 每次更新都会冲突一次**（上游也在改），改一下数字就行，
+  不要把它当成合并失败的信号。
 
 ## 验证
+
 
 ```bash
 # 1) 兼容层注入（应输出 1）
