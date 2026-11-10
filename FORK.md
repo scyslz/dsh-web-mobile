@@ -2,7 +2,7 @@
 
 基线：上游 **v3.3.5 + main 上的后续修复**（`1402ca8 fix(styles): 插件页交还宿主排版`），
 peer `>=0.2.2-rc.1 <0.3.0-0`，对应 DSH `0.2.2-rc.1`。
-版本号：`3.3.5-compat.2`。
+版本号：`3.3.5-compat.3`。
 
 只做两件事：**老 WebView 的 JS 兼容层**、**删除会话不再被反代 524**。
 布局全部沿用上游，没有改任何 CSS，也没有改宿主的交互。
@@ -65,20 +65,20 @@ webCtx.effect(
 pnpm install --frozen-lockfile
 pnpm run verify
 pnpm run build        # 产物在 lib/，本仓库把 lib/ 一起提交，便于 git 安装
-npm pack              # 可选：dsh-web-mobile-3.3.5-compat.2.tgz
+npm pack              # 可选：dsh-web-mobile-3.3.5-compat.3.tgz
 ```
 
 ## 安装
 
 ```bash
 # tag（推荐，可复现）
-dsh plugin --profile web add git+https://github.com/scyslz/dsh-web-mobile.git#v3.3.5-compat.2
+dsh plugin --profile web add git+https://github.com/scyslz/dsh-web-mobile.git#v3.3.5-compat.3
 
 # 或跟分支
 dsh plugin --profile web add git+https://github.com/scyslz/dsh-web-mobile.git#compat/dsh-0.2.2
 
 # 或本地 tarball
-dsh plugin --profile web add file:/path/to/dsh-web-mobile-3.3.5-compat.2.tgz
+dsh plugin --profile web add file:/path/to/dsh-web-mobile-3.3.5-compat.3.tgz
 ```
 
 装完重启：

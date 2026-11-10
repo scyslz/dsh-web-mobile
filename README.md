@@ -1,11 +1,11 @@
 ![dsh-web-mobile — 手机上也能好好用 DSH](assets/banner.png)
 
-> **本仓库是 fork（`3.3.5-compat.2`）**：在上游 v3.3.5 之上只补了两件事 ——
+> **本仓库是 fork（`3.3.5-compat.3`）**：在上游 v3.3.5 之上只补了两件事 ——
 > ①老 WebView 的 JS 兼容层（`Promise.withResolvers` 等）、
 > ②删除会话不再被反代 524。
 > 布局与交互完全沿用上游。改动说明与安装命令见 **[FORK.md](FORK.md)**。
 >
-> 安装：`dsh plugin --profile web add git+https://github.com/scyslz/dsh-web-mobile.git#v3.3.5-compat.2`
+> 安装：`dsh plugin --profile web add git+https://github.com/scyslz/dsh-web-mobile.git#v3.3.5-compat.3`
 
 <p align="center">
   <strong>DSH Web UI 移动端适配：窄屏好用，宽屏适用</strong>
